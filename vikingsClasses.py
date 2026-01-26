@@ -31,11 +31,38 @@ class Viking(Soldier):
         else:
             return f"{self.name} has died in act of combat"
 
+#Archer
+#Javier: Create test for Archers
+
+class Archer(Soldier):# Javier: Creat Archer with 20% probability of missing
+    def __init__(self, health, strength):
+        super().__init__(health, strength)
+    
+    def battleCry(self):
+        return "Loose the arrows!"
+    
+    def shootArrow(self):
+        if random.random() < 0.20:
+            return 0
+        return self.strength + random.randint(0, 5)#randomness of damage
+    
+    def receiveDamage(self, damage):
+        self.health -= damage
+        if self.health > 0:
+            return f"An Archer has received {damage} point of damage"
+        else:
+            return "An Archer has died in combat"
+
 # Saxon
 
 class Saxon(Soldier):
     def __init__(self, health, strength):
         super().__init__(health, strength)
+    
+    def catapultStone(self):#Javier: create Catapults and probability of 20% of missing
+        if random.random() < 0:
+            return 0
+        return self.strength + random.rendint(5, 10)#randomness of damage
 
     def receiveDamage(self, damage):
         self.health -= damage
@@ -45,7 +72,7 @@ class Saxon(Soldier):
         else:
             return "A Saxon has died in combat"
 
-    #we need to put comment?
+    #we need to put comment? Javier: YES!! With your names if its posible
 
 # WAAAAAAAAAGH
 
@@ -54,11 +81,13 @@ class War():
         self.vikingArmy = []
         self.saxonArmy = []
 
-    def addViking(self, viking):
+    def addViking(self, viking, Archer):
         self.vikingArmy.append(viking)
+        self.vikingArmy.append(Archer)
     
-    def addSaxon(self, saxon):
+    def addSaxon(self, saxon, Archer):
         self.saxonArmy.append(saxon)
+        self.saxonArmy.append(Archer)
       
     
     def vikingAttack(self):
@@ -79,6 +108,46 @@ class War():
         if defender.health <= 0:
             self.vikingArmy.remove(defender)
         return result
+    
+    def ArcherAttack(self):#Javier: Archer attack
+        archers = [viking for viking in self.vikingArmy if isinstance(viking, Archer)]#Javier: insistance is for the code now that its an archer in the vikings
+        if not archers or not self.saxonArmy:
+            return "All dead."
+        attacker = random.choice(archers)
+        defender = random.choice(self.saxonArmy)
+
+        damage = attacker.shootArrow()
+        if damage == 0:
+            return "The Archer missed the shot!"
+
+        result = defender.receiveDamage(attacker.shootArrow())
+
+        if defender.health <= 0:
+            self.saxonArmy.remove(defender)
+        return result
+    
+    def CatapultRock(self):#Javier: Catapult attack
+        if not self.saxonArmy:
+            return "No saxon left."
+        
+        archers = [viking for viking in self.vikingArmy if isinstance(viking, Archer)]
+        if not archers:
+            return "No archers left to attack."
+
+        attacker = random.choice(self.saxonArmy)
+        defender = random.choice(archers)
+
+        damage = attacker.catapultStone()
+        if damage == 0:
+            return "The Stone didnt hit anyone!"
+
+        result = defender.receiveDamage(attacker.catapultStone())
+
+        if defender.health <= 0:
+            self.vikingArmy.remove(defender)
+
+        return result 
+        
 
     def showStatus(self):
         if len(self.saxonArmy) == 0:
