@@ -60,9 +60,19 @@ class Saxon(Soldier):
         super().__init__(health, strength)
     
     def catapultStone(self):#Javier: create Catapults and probability of 20% of missing
-        if random.random() < 0:
+        if random.random() < 0.20:
             return 0
-        return self.strength + random.rendint(5, 10)#randomness of damage
+        return self.strength + random.randint(5, 10)#randomness of damage
+    
+    def blow(self) #Assya: "Saxon can recib hits"
+        if random.random() < 0.10:
+            return self.strength * 2
+        return self.strength
+       
+    def avoidattack (self): #Assya: Saxon can skeep attack
+        if random.random () < 0.20:
+            return True
+        return False 
 
     def receiveDamage(self, damage):
         self.health -= damage
@@ -109,6 +119,19 @@ class War():
             self.vikingArmy.remove(defender)
         return result
     
+    def vikingAttack (self) #Assya: saxon avoids attacks
+        defender = random.choice(self.vikingArmy)
+        attacker = random.choice(self.saxonArmy)
+        
+        if defender.avoidattack(): 
+            return 
+        damage = attacker.attack()
+        result = defender. receiveDamage (damage)
+
+        if defender.health <= 0:
+            self.saxonArmy.remove(defender)
+        return result
+    
     def ArcherAttack(self):#Javier: Archer attack
         archers = [viking for viking in self.vikingArmy if isinstance(viking, Archer)]#Javier: insistance is for the code now that its an archer in the vikings
         if not archers or not self.saxonArmy:
@@ -125,7 +148,7 @@ class War():
         if defender.health <= 0:
             self.saxonArmy.remove(defender)
         return result
-    
+
     def CatapultRock(self):#Javier: Catapult attack
         if not self.saxonArmy:
             return "No saxon left."
