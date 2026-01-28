@@ -1,6 +1,6 @@
 # main.py
 import random
-from vikingsClasses import Viking, Saxon, War
+from vikingsClasses import Viking, Saxon, Archer, War
 from director import GameDirector
 from ui import clear
 
@@ -12,12 +12,13 @@ NAMES = [
 def setup_war():
     war = War()
 
-    for _ in range(5):
+    viking_names = random.sample(NAMES, 5)
+    for name in viking_names:
         war.addViking(
             Viking(
-                random.choice(NAMES),
-                health=300,
-                strength=random.randint(80, 150),
+                name,
+                health=random.randint(150, 200),
+                strength=random.randint(70, 110),
             )
         )
 
@@ -25,7 +26,7 @@ def setup_war():
         war.addSaxon(
             Saxon(
                 health=100,
-                strength=random.randint(30, 60),
+                strength=random.randint(40, 70),
             )
         )
 

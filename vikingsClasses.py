@@ -64,12 +64,12 @@ class Saxon(Soldier):
             return 0
         return self.strength + random.randint(5, 10)#randomness of damage
     
-    def blow(self) #Assya: "Saxon can recib hits"
+    def blow(self): #Assya: "Saxon can receive hits"
         if random.random() < 0.10:
             return self.strength * 2
         return self.strength
        
-    def avoidattack (self): #Assya: Saxon can skeep attack
+    def avoidattack (self): #Assya: Saxons can avoid attack
         if random.random () < 0.20:
             return True
         return False 
@@ -91,19 +91,21 @@ class War():
         self.vikingArmy = []
         self.saxonArmy = []
 
-    def addViking(self, viking, Archer):
+    def addViking(self, viking):
         self.vikingArmy.append(viking)
-        self.vikingArmy.append(Archer)
     
-    def addSaxon(self, saxon, Archer):
+    def addSaxon(self, saxon):
         self.saxonArmy.append(saxon)
-        self.saxonArmy.append(Archer)
       
     
     def vikingAttack(self):
         defender = random.choice(self.saxonArmy)
         attacker = random.choice(self.vikingArmy)
 
+        # Check if Saxon defender avoids the attack
+        if hasattr(defender, 'avoidattack') and defender.avoidattack():
+            return "Saxon missed the attack!" # Or "Saxon avoided attack"
+        
         result = defender.receiveDamage(attacker.attack())
 
         if defender.health <= 0:
@@ -119,18 +121,7 @@ class War():
             self.vikingArmy.remove(defender)
         return result
     
-    def vikingAttack (self) #Assya: saxon avoids attacks
-        defender = random.choice(self.vikingArmy)
-        attacker = random.choice(self.saxonArmy)
-        
-        if defender.avoidattack(): 
-            return 
-        damage = attacker.attack()
-        result = defender. receiveDamage (damage)
 
-        if defender.health <= 0:
-            self.saxonArmy.remove(defender)
-        return result
     
     def ArcherAttack(self):#Javier: Archer attack
         archers = [viking for viking in self.vikingArmy if isinstance(viking, Archer)]#Javier: insistance is for the code now that its an archer in the vikings
