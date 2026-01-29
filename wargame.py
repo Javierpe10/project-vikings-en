@@ -15,8 +15,10 @@ for i in range(0,5):
 
 #Create 5 Saxons
 for i in range(0,5):
-    if i:
-        great_war.addSaxon(Saxon(100,random.randint(0,100)))
+    if random.random() > 0.3:
+        great_war.addSaxon(WarriorMonk(90, random.randint(40, 70)))
+    else:
+        great_war.addSaxon(Saxon(100,random.randint(50,90)))
     
 round = 0
 while great_war.showStatus() == "Vikings and Saxons are still in the thick of battle.":

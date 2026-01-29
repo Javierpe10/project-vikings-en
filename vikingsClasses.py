@@ -81,6 +81,16 @@ class Saxon(Soldier):
             return f"A Saxon has received {damage} points of damage"
         else:
             return "A Saxon has died in combat"
+    
+class WarriorMonk(Saxon):#irs special claas of Saxon, that why is not Soldier.
+    def __init__(self, health, strength):
+        super().__init__(health, strength)
+        self.isMonk = True
+    
+    def battleCry(self):
+        return "For God and Saxony!"
+    def attack(self):
+        return int(self.strength * 0.8)
 
     #we need to put comment? Javier: YES!! With your names if its posible
 
@@ -90,6 +100,12 @@ class War():
     def __init__(self):
         self.vikingArmy = []
         self.saxonArmy = []
+        self.saxonMorale = 1.0#moral inicial
+    
+    def increaseSaxonMorale(self):
+        self.saxonMorale += 0.1
+        if self.saxonMorale > 1.5:
+            self.saxonMorale = 1.5#pone el limite de maximo para la moral
 
     def addViking(self, viking):
         self.vikingArmy.append(viking)
@@ -111,17 +127,24 @@ class War():
         if defender.health <= 0:
             self.saxonArmy.remove(defender)
         return result
+    
     def saxonAttack(self):
+        if not self.vikingArmy or not self.saxonArmy:
+            return "No one left"
+        
         defender = random.choice(self.vikingArmy)
         attacker = random.choice(self.saxonArmy)
 
-        result = defender.receiveDamage(attacker.attack())
+        damage = int(attacker.attack() * self.saxonMorale)
+        result = defender.receiveDamage(damage)
 
         if defender.health <= 0:
             self.vikingArmy.remove(defender)
-        return result
-    
+        
+        if isinstance(attacker, WarriorMonk):#si el atacante es un monje sube la moral
+            self.increaseSaxonMorale()
 
+        return result
     
     def ArcherAttack(self):#Javier: Archer attack
         archers = [viking for viking in self.vikingArmy if isinstance(viking, Archer)]#Javier: insistance is for the code now that its an archer in the vikings
