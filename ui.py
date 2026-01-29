@@ -1,40 +1,45 @@
 # ui.py
+# -----
+# Handles ALL presentation-related concerns:
+# - Sound effects and music (pygame)
+# - Timing and pauses
+# - Terminal UI (health bars, round framing, cinematic output)
 
 import pygame
 import random
 import os
 import time
 
-# Initialize Pygame and Mixer
+# Initialize Pygame and Mixer (required for sound playback)
 pygame.init()
 pygame.mixer.init()
 
 # --- CONSTANTS & CONFIG ---
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-# We create a display surface because pygame commands often require it, 
-# even if we are mostly text-based.
+
+# A display surface is required by pygame even if we are text-based
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Vikings vs Saxons")
 
-# Sound File Mappings
-# Mapping categories to lists of filenames from your 'sounds' directory
+# --- SOUND CONFIG ---
+# Maps sound categories to available audio files
 SOUND_POOL = {
     "hits": ["sounds/Metal Thud.mp3"], 
     "cries": ["sounds/Battle Cry - High Pitch.mp3", "sounds/Battle Agony Moans.mp3"],
-    "ambience": ["sounds/battle.mp3", "sounds/battle.wav"], # Long files
+    "ambience": ["sounds/battle.mp3", "sounds/battle.wav"],
     "intro": ["sounds/intro.mp3"],
     "results": ["sounds/results.mp3", "sounds/battle_results.wav"],
     "archers": ["sounds/archers.wav"]
 }
 
-# Cache for loaded Sound objects (only for short SFX)
+# Cache for short sound effects (loaded once)
 SFX_CACHE = {}
 
 def load_sounds():
     """
     Preloads short sound effects into memory.
-    Long ambience tracks are NOT preloaded to save RAM; specific streaming functions will handle them.
+    Long ambience tracks are streamed instead.
     """
     print("Loading sounds...")
     for category in ["hits", "cries", "archers"]:
@@ -43,8 +48,7 @@ def load_sounds():
             if os.path.exists(filename):
                 try:
                     sound = pygame.mixer.Sound(filename)
-                    # Lower volume for SFX so they don't deafen
-                    sound.set_volume(0.6) 
+                    sound.set_volume(0.6)
                     SFX_CACHE[category].append(sound)
                     print(f"  [+] Loaded {filename}")
                 except Exception as e:
@@ -54,18 +58,16 @@ def load_sounds():
 
 def play_sfx(category, maxtime=0, fade_ms=0):
     """
-    Plays a random Sound object from the loaded cache for a given category.
-    Allows for overlapping sounds (SFX layer).
+    Plays a random sound effect from a given category.
+    Used for hits, deaths, and special actions.
     """
     if category in SFX_CACHE and SFX_CACHE[category]:
-        sound = random.choice(SFX_CACHE[category])
-        # play() returns a Channel object
-        sound.play(maxtime=maxtime, fade_ms=fade_ms)
+        random.choice(SFX_CACHE[category]).play(maxtime=maxtime, fade_ms=fade_ms)
 
 def play_music_snippet(category, fade_ms=2000):
     """
-    Streams a random long file from disk as background music.
-    Supports random start offsets to create variety.
+    Streams a random background track from disk.
+    Used for ambience, intro, and results music.
     """
     files = SOUND_POOL.get(category, [])
     if not files:
@@ -75,41 +77,91 @@ def play_music_snippet(category, fade_ms=2000):
     if os.path.exists(filename):
         try:
             pygame.mixer.music.load(filename)
-            
-            # Random start point logic
-            # Since we don't know exact duration without probing, we pick a safe random start
-            # or start from 0 if it's a short clip. 
-            # ideally, 'battle.mp3' is long.
-            start_offset = random.uniform(0, 30.0) # Start anywhere in first 30s
-            
-            print(f"🎵 Playing atmosphere: {filename} (Offset: {start_offset:.1f}s)")
+            start_offset = random.uniform(0, 30.0)
             pygame.mixer.music.play(start=start_offset, fade_ms=fade_ms)
-            pygame.mixer.music.set_volume(0.4) # Background level
+            pygame.mixer.music.set_volume(0.4)
         except Exception as e:
             print(f"Music error: {e}")
 
 def stop_music(fade_ms=1000):
+    """Fades out any currently playing background music."""
     pygame.mixer.music.fadeout(fade_ms)
 
-# --- VISUAL UI ---
+# --- BASIC UI HELPERS ---
 
 def clear():
+    """Clears the terminal screen (cross-platform)."""
     os.system("cls" if os.name == "nt" else "clear")
 
 def pause(seconds=0.8):
+    """Adds a small delay for pacing and readability."""
     time.sleep(seconds)
 
-def health_bar(unit, max_health=300, length=20):
+def health_bar(unit, max_health=300, length=10):
+    """
+    Builds a colored health bar for a unit.
+    Color reflects remaining health percentage.
+    """
     current = max(unit.health, 0)
     ratio = current / max_health
-    filled = int(ratio * length)
-    return "█" * filled + "-" * (length - filled)
+    filled = max(0, min(length, int(ratio * length)))
+
+    if ratio > 0.6:
+        block = "🟩"
+    elif ratio > 0.3:
+        block = "🟨"
+    else:
+        block = "🟥"
+
+    return block * filled + "⬛" * (length - filled)
 
 def display_armies(war):
+    """
+    Original army display (kept for compatibility).
+    """
     print("\n🛡️ VIKINGS")
     for v in war.vikingArmy:
-        print(f"  {getattr(v, 'name', 'Unknown')} [{health_bar(v)}] {v.health} HP")
+        print(f"  {v.name} [{health_bar(v)}] {v.health} HP")
 
     print("\n⚔️ SAXONS")
     for s in war.saxonArmy:
-        print(f"  Saxon [{health_bar(s, max_health=100)}] {s.health} HP")
+        print(f"  Saxon [{health_bar(s, 100)}] {s.health} HP")
+
+# --- CINEMATIC CLI ADDITIONS ---
+# These functions improve readability and presentation
+# without affecting game mechanics or sound behavior.
+
+def print_round_header(round_number):
+    """Prints a cinematic round title."""
+    print("\n" + "═" * 36)
+    print(f"{'⚔️  ROUND ' + str(round_number):^36}")
+    print("═" * 36 + "\n")
+
+def print_action(title, result):
+    """
+    Prints a formatted action block.
+    Uses symbols to distinguish damage from death.
+    """
+    print(title)
+    if result:
+        if "died" in str(result).lower() or "dead" in str(result).lower():
+            print(f"    └─ 💀 {result}")
+        else:
+            print(f"    └─ 💥 {result}")
+
+def print_battle_status_cinematic(war):
+    """
+    Cinematic version of the army status display.
+    Groups armies and uses colored health bars.
+    """
+    print("\n" + "═" * 12 + "  BATTLE STATUS  " + "═" * 12 + "\n")
+
+    print("🛡️ VIKINGS")
+    for v in war.vikingArmy:
+        print(f"  {v.name:<8} [{health_bar(v)}] {v.health} HP")
+
+    print("\n⚔️ SAXONS")
+    for s in war.saxonArmy:
+        label = "Monk" if s.__class__.__name__ == "WarriorMonk" else "Saxon"
+        max_hp = 90 if label == "Monk" else 100
+        print(f"  {label:<8} [{health_bar(s, max_hp)}] {s.health} HP")
